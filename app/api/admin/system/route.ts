@@ -1,11 +1,11 @@
 import { runStatement, serviceFailure } from '@/lib/platform-db'
+import { getSession } from '@/lib/auth'
 
 export async function GET(request: Request) {
   try {
-    // Basic admin guard — will be replaced with proper auth middleware in Phase 4
-    const cookies = request.headers.get('cookie') || ''
-    const isAdmin = cookies.split(';').some((c) => c.trim() === 'role=admin')
-    if (!isAdmin) {
+    // Verify signed session and require admin role
+    const session = getSession(request)
+    if (!session || session.role !== 'admin') {
       return Response.json(
         { ok: false, message: 'Forbidden.' },
         { status: 403 }

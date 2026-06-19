@@ -54,3 +54,15 @@ export function sessionCookie(token: string): string {
 export function clearSessionCookie(): string {
   return 'session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'
 }
+
+/**
+ * Extract and verify the session from a Request's cookie header.
+ * Returns the verified payload or null if missing/invalid/tampered.
+ */
+export function getSession(request: Request): SessionPayload | null {
+  const cookies = request.headers.get('cookie') || ''
+  const match = cookies.split(';').find((c) => c.trim().startsWith('session='))
+  if (!match) return null
+  const token = match.split('=').slice(1).join('=').trim()
+  return verifySession(token)
+}
