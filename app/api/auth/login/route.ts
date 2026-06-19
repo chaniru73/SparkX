@@ -1,4 +1,5 @@
 import { asText, runStatement, serviceFailure } from '@/lib/platform-db'
+import { signSession, sessionCookie } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
 
 // GET handler removed — it exposed all user credentials to unauthenticated callers.
@@ -31,16 +32,19 @@ export async function POST(request: Request) {
     // Strip password hash before building response
     const { password: _hash, ...user } = row
 
+    const token = signSession({
+      userId: user.id,
+      username: user.username,
+      role: user.role
+    })
+
     const headers = new Headers()
-    headers.append('set-cookie', `user_id=${user.id}; Path=/; SameSite=Lax`)
-    headers.append('set-cookie', `role=${user.role}; Path=/; SameSite=Lax`)
+    headers.append('set-cookie', sessionCookie(token))
 
     return Response.json(
       {
         ok: true,
-        token: Buffer.from(`${user.id}:${user.role}:session-token`).toString(
-          'base64'
-        ),
+        token,
         user
       },
       { headers }
