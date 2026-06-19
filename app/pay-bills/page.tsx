@@ -1,15 +1,15 @@
 'use client'
 
-import { useState } from 'react'
 import Image from 'next/image'
-import Sidebar from '../../components/sidebar'
+import { useState } from 'react'
 import {
-  Search,
-  Settings,
-  CheckCircle2,
   AlertTriangle,
-  ChevronLeft
+  CheckCircle2,
+  ChevronLeft,
+  Search,
+  Settings
 } from '../../components/Icons'
+import Sidebar from '../../components/sidebar'
 
 type Biller = {
   id: string
@@ -123,7 +123,14 @@ export default function PayBillsPage() {
 
       <div className="content">
         <header className="topbar">
-          <h1>Pay Bills</h1>
+          <h1>
+            Pay Bills{' '}
+            <span
+              style={{ fontSize: '12px', color: '#888', marginLeft: '8px' }}
+            >
+              (Demo / UI Only)
+            </span>
+          </h1>
           <div className="topbar-icons">
             <Search size={20} />
             <Settings size={20} />

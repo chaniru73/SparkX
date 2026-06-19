@@ -116,7 +116,10 @@ const LogOut = ({ size = 24 }: IconProps) => (
       strokeLinejoin="round"
     />
     <line
-      x1="21" y1="12" x2="9" y2="12"
+      x1="21"
+      y1="12"
+      x2="9"
+      y2="12"
       stroke="currentColor"
       strokeWidth="1.5"
       strokeLinecap="round"

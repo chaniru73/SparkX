@@ -1,27 +1,105 @@
 'use client'
 
-import Sidebar from '../../components/sidebar'
+import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
 import { Bell, ChevronRight, Search } from '../../components/Icons'
+import Sidebar from '../../components/sidebar'
 
-const transactions = [
-  {
-    date: 'Oct, 16 2025',
-    account: '......3423',
-    amount: '-Rs. 4500.00'
-  },
-  {
-    date: 'Oct, 16 2025',
-    account: '......4876',
-    amount: '-Rs. 10,000.00'
-  },
-  {
-    date: 'Oct, 16 2025',
-    account: '......6754',
-    amount: '-Rs. 9870.00'
-  }
-]
+interface Account {
+  id: number
+  account_number: string
+  balance: string
+  full_name: string
+}
+
+interface Transaction {
+  id: number
+  from_account: string
+  to_account: string
+  amount: string
+  created_at: string
+}
 
 export default function Dashboard() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [balance, setBalance] = useState('0')
+  const [fullName, setFullName] = useState('')
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await fetch('/api/accounts', { credentials: 'include' })
+      if (res.status === 401) {
+        router.replace('/login')
+        return
+      }
+      if (!res.ok) return
+
+      const data = await res.json()
+      const accs: Account[] = data.accounts ?? []
+
+      if (accs.length > 0) {
+        setFullName(accs[0].full_name.split(' ')[0] || '')
+
+        // Sum balance
+        const total = accs.reduce(
+          (sum, a) => sum + parseFloat(a.balance || '0'),
+          0
+        )
+        setBalance(total.toString())
+
+        // Fetch txns for the first account (or all)
+        const txnRes = await fetch(
+          `/api/transactions?account=${accs[0].account_number}`,
+          { credentials: 'include' }
+        )
+        if (txnRes.ok) {
+          const txnData = await txnRes.json()
+          setTransactions((txnData.transactions || []).slice(0, 3))
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false)
+    }
+  }, [router])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  const formatBalance = (val: string) => {
+    return parseFloat(val).toLocaleString('en-LK', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
+  }
+
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      })
+    } catch {
+      return iso
+    }
+  }
+
+  if (loading) {
+    return (
+      <main style={{ display: 'flex', width: '100vw', minHeight: '100vh', background: '#f1f1f1' }}>
+        <Sidebar />
+        <section style={{ flex: 1, padding: '1.5rem' }}>
+          <p style={{ padding: '2rem' }}>Loading dashboard...</p>
+        </section>
+      </main>
+    )
+  }
+
   return (
     <main className="dashboard">
       <Sidebar />
@@ -40,10 +118,12 @@ export default function Dashboard() {
         {/* Top Section */}
         <div className="top-section">
           <div className="welcome-card">
-            <h2 className="welcome-title">Welcome back, Dilara!</h2>
+            <h2 className="welcome-title">
+              Welcome back{fullName ? `, ${fullName}` : ''}!
+            </h2>
             <div className="balance-card">
               <p className="balance-label">Current Balance</p>
-              <p className="balance-amount">Rs. 100, 000</p>
+              <p className="balance-amount">Rs. {formatBalance(balance)}</p>
               <ChevronRight className="balance-chevron" size={30} />
             </div>
             <div className="carousel-dots">
@@ -59,7 +139,10 @@ export default function Dashboard() {
           </div>
 
           <div className="payees-card">
-            <h3 className="payees-title">Saved Payees</h3>
+            <h3 className="payees-title">
+              Saved Payees{' '}
+              <span style={{ fontSize: '10px', color: '#888' }}>(Demo)</span>
+            </h3>
             <div className="payees-list">
               {[1, 2].map((item) => (
                 <div key={item} className="payee-item">
@@ -82,19 +165,31 @@ export default function Dashboard() {
         <div className="transactions-section">
           <h2 className="transactions-title">Recent Transactions</h2>
           <div className="transactions-card">
-            {transactions.map((t, index) => (
-              <div key={index} className="transaction-item">
-                <img src="/person-logo.png" alt="user" className="avatar" />
-                <span className="transaction-date">{t.date}</span>
-                <span className="transaction-account">{t.account}</span>
-                <span className="transaction-amount">{t.amount}</span>
-                <span className="transaction-status">Success</span>
+            {transactions.length === 0 ? (
+              <p style={{ color: '#888', paddingTop: '1rem' }}>
+                No recent transactions.
+              </p>
+            ) : (
+              transactions.map((t) => (
+                <div key={t.id} className="transaction-item">
+                  <img src="/person-logo.png" alt="user" className="avatar" />
+                  <span className="transaction-date">
+                    {formatDate(t.created_at)}
+                  </span>
+                  <span className="transaction-account">{t.to_account}</span>
+                  <span className="transaction-amount">
+                    Rs. {formatBalance(t.amount)}
+                  </span>
+                  <span className="transaction-status">Success</span>
+                </div>
+              ))
+            )}
+            {transactions.length > 0 && (
+              <div className="view-all">
+                View all
+                <ChevronRight size={15} />
               </div>
-            ))}
-            <div className="view-all">
-              View all
-              <ChevronRight size={15} />
-            </div>
+            )}
           </div>
         </div>
       </section>

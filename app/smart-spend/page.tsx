@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Sidebar from '@/components/sidebar'
+import { useCallback, useEffect, useState } from 'react'
 import { Bell, Search } from '@/components/Icons'
+import Sidebar from '@/components/sidebar'
 
 interface Account {
   id: number
@@ -237,7 +237,9 @@ export default function SmartSpendPage() {
             {accounts.map((a) => (
               <div key={a.id} className="account-chip">
                 <span className="chip-name">{a.account_name}</span>
-                <span className="chip-number">{maskAccount(a.account_number)}</span>
+                <span className="chip-number">
+                  {maskAccount(a.account_number)}
+                </span>
                 <span className="chip-balance">
                   {formatCurrency(Number.parseFloat(a.balance || '0'))}
                 </span>

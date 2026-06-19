@@ -1,5 +1,5 @@
-import { Pool } from 'pg'
 import bcrypt from 'bcryptjs'
+import { Pool } from 'pg'
 
 const connectionString = process.env.DATABASE_URL
 if (!connectionString) {
@@ -56,9 +56,33 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 `
 
 const seedUsers = [
-  { id: 1, username: 'dilara', password: 'password123', role: 'customer', full_name: 'Dilara Perera', nic: '200112345678', email: 'dilara@example.test' },
-  { id: 2, username: 'kasun', password: 'kasun', role: 'customer', full_name: 'Kasun Wickramanayake', nic: '199812345678', email: 'kasun@example.test' },
-  { id: 3, username: 'admin', password: 'admin', role: 'admin', full_name: 'Platform Administrator', nic: '000000000000', email: 'root@example.test' }
+  {
+    id: 1,
+    username: 'dilara',
+    password: 'password123',
+    role: 'customer',
+    full_name: 'Dilara Perera',
+    nic: '200112345678',
+    email: 'dilara@example.test'
+  },
+  {
+    id: 2,
+    username: 'kasun',
+    password: 'kasun',
+    role: 'customer',
+    full_name: 'Kasun Wickramanayake',
+    nic: '199812345678',
+    email: 'kasun@example.test'
+  },
+  {
+    id: 3,
+    username: 'admin',
+    password: 'admin',
+    role: 'admin',
+    full_name: 'Platform Administrator',
+    nic: '000000000000',
+    email: 'root@example.test'
+  }
 ]
 
 const seedData = `

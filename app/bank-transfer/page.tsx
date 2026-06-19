@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
 import Sidebar from '@/components/sidebar'
 
 interface Account {
@@ -169,7 +169,9 @@ export default function Home() {
           {step === 'form' ? (
             <form onSubmit={handleNext} className="transfer-card p-8">
               <div className="grid grid-cols-12 gap-y-6 gap-x-8 items-center">
-                <label className="col-span-3 text-gray-700">From Account :</label>
+                <label className="col-span-3 text-gray-700">
+                  From Account :
+                </label>
                 <div className="col-span-9">
                   <select
                     value={fromAccount}
@@ -181,7 +183,8 @@ export default function Home() {
                     )}
                     {accounts.map((acc) => (
                       <option key={acc.id} value={acc.account_number}>
-                        {acc.account_name} — {acc.account_number} ({formatBalance(acc.balance)})
+                        {acc.account_name} — {acc.account_number} (
+                        {formatBalance(acc.balance)})
                       </option>
                     ))}
                   </select>
@@ -255,10 +258,19 @@ export default function Home() {
               </h3>
               <div className="bg-white rounded-lg p-6 shadow-lg max-w-xl mx-auto text-center">
                 <p className="mb-2">
-                  From: <strong>{selectedAccount?.account_name ?? fromAccount}</strong>
+                  From:{' '}
+                  <strong>
+                    {selectedAccount?.account_name ?? fromAccount}
+                  </strong>
                 </p>
                 <p className="mb-4">
-                  Transfer <strong>Rs. {Number(amount).toLocaleString('en-LK', { minimumFractionDigits: 2 })}</strong>{' '}
+                  Transfer{' '}
+                  <strong>
+                    Rs.{' '}
+                    {Number(amount).toLocaleString('en-LK', {
+                      minimumFractionDigits: 2
+                    })}
+                  </strong>{' '}
                   to account <strong>{toAccount}</strong>
                 </p>
                 {description && (

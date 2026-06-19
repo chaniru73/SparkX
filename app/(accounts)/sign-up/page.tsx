@@ -19,9 +19,12 @@ export default function SignUpPage() {
           className="absolute left-0 top-0 hidden w-[128px] md:block"
         />
 
-        <h1 className="mb-12 text-center text-[2.6rem] font-bold text-black text-balance">
+        <h1 className="mb-4 text-center text-[2.6rem] font-bold text-black text-balance">
           SIGN UP
         </h1>
+        <p className="mb-8 text-center text-sm font-semibold text-gray-500">
+          (Demo / UI Only - Not connected to backend)
+        </p>
 
         <div className="space-y-4">
           {fields.map((field) => {

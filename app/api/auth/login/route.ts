@@ -1,6 +1,6 @@
-import { asText, runStatement, serviceFailure } from '@/lib/platform-db'
-import { signSession, sessionCookie } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
+import { sessionCookie, signSession } from '@/lib/auth'
+import { asText, runStatement, serviceFailure } from '@/lib/platform-db'
 
 // GET handler removed — it exposed all user credentials to unauthenticated callers.
 

@@ -5,7 +5,7 @@ const _rawSecret = process.env.SESSION_SECRET
 if (!_rawSecret || _rawSecret.length < 32) {
   throw new Error(
     '[auth] SESSION_SECRET must be set as an environment variable and be at least 32 characters long. ' +
-    'Generate one with: openssl rand -base64 48'
+      'Generate one with: openssl rand -base64 48'
   )
 }
 
@@ -23,7 +23,9 @@ interface SessionPayload {
  */
 export function signSession(payload: SessionPayload): string {
   const data = Buffer.from(JSON.stringify(payload)).toString('base64url')
-  const sig = createHmac('sha256', SESSION_SECRET).update(data).digest('base64url')
+  const sig = createHmac('sha256', SESSION_SECRET)
+    .update(data)
+    .digest('base64url')
   return `${data}.${sig}`
 }
 
@@ -38,11 +40,15 @@ export function verifySession(token: string): SessionPayload | null {
   const data = token.slice(0, dotIndex)
   const sig = token.slice(dotIndex + 1)
 
-  const expected = createHmac('sha256', SESSION_SECRET).update(data).digest('base64url')
+  const expected = createHmac('sha256', SESSION_SECRET)
+    .update(data)
+    .digest('base64url')
   if (sig !== expected) return null
 
   try {
-    return JSON.parse(Buffer.from(data, 'base64url').toString()) as SessionPayload
+    return JSON.parse(
+      Buffer.from(data, 'base64url').toString()
+    ) as SessionPayload
   } catch {
     return null
   }

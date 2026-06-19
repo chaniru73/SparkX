@@ -1,5 +1,5 @@
-import { asText, runStatement, serviceFailure } from '@/lib/platform-db'
 import { getSession } from '@/lib/auth'
+import { asText, runStatement, serviceFailure } from '@/lib/platform-db'
 
 export async function GET(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
-    
+
     // Admin can query any user; customers can only query their own
     let targetUserId = session.userId
     if (session.role === 'admin') {

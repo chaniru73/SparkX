@@ -1,5 +1,5 @@
-import { asText, runStatement, serviceFailure } from '@/lib/platform-db'
 import { getSession } from '@/lib/auth'
+import { asText, runStatement, serviceFailure } from '@/lib/platform-db'
 
 export async function GET(request: Request) {
   try {

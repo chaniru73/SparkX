@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { type FormEvent, useState } from 'react'
 import AuthButton from '@/components/authButton'
 
 export default function LoginPage() {

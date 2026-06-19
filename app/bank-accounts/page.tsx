@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useCallback, useEffect, useState, Suspense } from 'react'
+import { Bell, Search } from '@/components/Icons'
 import Sidebar from '@/components/sidebar'
-import { Search, Bell } from '@/components/Icons'
 import styles from './accounts.module.css'
 
 type Screen = 'list' | 'add' | 'edit'
@@ -19,7 +19,7 @@ interface Account {
   full_name: string
 }
 
-export default function AccountsPage() {
+function AccountsContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -314,18 +314,29 @@ export default function AccountsPage() {
 
             <div className={styles.cardsContainer}>
               {loading ? (
-                <p style={{ color: '#888', padding: '2rem' }}>Loading accounts…</p>
+                <p style={{ color: '#888', padding: '2rem' }}>
+                  Loading accounts…
+                </p>
               ) : accounts.length === 0 ? (
-                <p style={{ color: '#888', padding: '2rem' }}>No accounts found.</p>
+                <p style={{ color: '#888', padding: '2rem' }}>
+                  No accounts found.
+                </p>
               ) : (
                 accounts.map((account) => (
                   <div key={account.id} className={styles.accountCard}>
                     <div className={styles.iconEdit} onClick={goToEdit}>
                       ✏️
                     </div>
-                    <div className={styles.iconDelete} title="Demo only — no backend endpoint">🗑️</div>
+                    <div
+                      className={styles.iconDelete}
+                      title="Demo only — no backend endpoint"
+                    >
+                      🗑️
+                    </div>
                     <div className={styles.accountCardContent}>
-                      <h2 className={styles.accountName}>{account.account_name}</h2>
+                      <h2 className={styles.accountName}>
+                        {account.account_name}
+                      </h2>
                       <div className={styles.accountAvatar}>
                         <Image
                           src="/account-logo.png"
@@ -376,7 +387,13 @@ export default function AccountsPage() {
               <div className={styles.formCard}>
                 <div className={styles.formHeader}>
                   <h2 className={styles.formTitle}>Add Another Bank Account</h2>
-                  <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                  <p
+                    style={{
+                      fontSize: '12px',
+                      color: '#888',
+                      marginTop: '4px'
+                    }}
+                  >
                     Demo only — not connected to backend
                   </p>
                 </div>
@@ -513,7 +530,13 @@ export default function AccountsPage() {
               <div className={styles.formCard}>
                 <div className={styles.formHeader}>
                   <h2 className={styles.formTitle}>Edit the nickname</h2>
-                  <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                  <p
+                    style={{
+                      fontSize: '12px',
+                      color: '#888',
+                      marginTop: '4px'
+                    }}
+                  >
                     Demo only — not connected to backend
                   </p>
                 </div>
@@ -564,5 +587,13 @@ export default function AccountsPage() {
         )}
       </section>
     </main>
+  )
+}
+
+export default function AccountsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AccountsContent />
+    </Suspense>
   )
 }

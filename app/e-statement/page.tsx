@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
 import Sidebar from '@/components/sidebar'
 
 interface Account {
@@ -57,38 +57,41 @@ export default function EStatementPage() {
   }, [fetchAccounts])
 
   // Fetch transactions for selected account
-  const fetchTransactions = useCallback(async (accountNumber: string) => {
-    if (!accountNumber) return
-    setLoading(true)
-    setErrorMsg('')
-    setTransactions([])
+  const fetchTransactions = useCallback(
+    async (accountNumber: string) => {
+      if (!accountNumber) return
+      setLoading(true)
+      setErrorMsg('')
+      setTransactions([])
 
-    try {
-      const res = await fetch(
-        `/api/transactions?account=${encodeURIComponent(accountNumber)}`,
-        { credentials: 'include' }
-      )
-      if (res.status === 401) {
-        router.replace('/login')
-        return
+      try {
+        const res = await fetch(
+          `/api/transactions?account=${encodeURIComponent(accountNumber)}`,
+          { credentials: 'include' }
+        )
+        if (res.status === 401) {
+          router.replace('/login')
+          return
+        }
+        if (res.status === 403) {
+          setErrorMsg('You do not have access to this account.')
+          return
+        }
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          setErrorMsg(data.message || 'Failed to load transactions.')
+          return
+        }
+        const data = await res.json()
+        setTransactions(data.transactions ?? [])
+      } catch {
+        setErrorMsg('Unable to reach the server.')
+      } finally {
+        setLoading(false)
       }
-      if (res.status === 403) {
-        setErrorMsg('You do not have access to this account.')
-        return
-      }
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        setErrorMsg(data.message || 'Failed to load transactions.')
-        return
-      }
-      const data = await res.json()
-      setTransactions(data.transactions ?? [])
-    } catch {
-      setErrorMsg('Unable to reach the server.')
-    } finally {
-      setLoading(false)
-    }
-  }, [router])
+    },
+    [router]
+  )
 
   function handleAccountSelect(accNum: string) {
     setSelectedAccount(accNum)
@@ -101,7 +104,9 @@ export default function EStatementPage() {
   }
 
   // Derive statement data
-  const currentAccount = accounts.find((a) => a.account_number === selectedAccount)
+  const currentAccount = accounts.find(
+    (a) => a.account_number === selectedAccount
+  )
   const balance = parseFloat(currentAccount?.balance || '0')
 
   // Calculate totals
@@ -114,7 +119,10 @@ export default function EStatementPage() {
     .reduce((sum, t) => sum + parseFloat(t.amount || '0'), 0)
 
   const formatCurrency = (n: number) =>
-    n.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    n.toLocaleString('en-LK', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
 
   const formatDate = (iso: string) => {
     try {
@@ -205,7 +213,9 @@ export default function EStatementPage() {
                   </div>
                   <div>
                     <dt className="inline">Account Name: </dt>
-                    <dd className="inline">{currentAccount?.account_name || '—'}</dd>
+                    <dd className="inline">
+                      {currentAccount?.account_name || '—'}
+                    </dd>
                   </div>
                 </dl>
               </div>
@@ -223,9 +233,15 @@ export default function EStatementPage() {
                   {selectedAccount && (
                     <tbody>
                       <tr>
-                        <td className="h-8 font-semibold">{formatCurrency(balance)}</td>
-                        <td className="h-8 text-green-700 font-semibold">+{formatCurrency(totalCredits)}</td>
-                        <td className="h-8 text-red-700 font-semibold">-{formatCurrency(totalDebits)}</td>
+                        <td className="h-8 font-semibold">
+                          {formatCurrency(balance)}
+                        </td>
+                        <td className="h-8 text-green-700 font-semibold">
+                          +{formatCurrency(totalCredits)}
+                        </td>
+                        <td className="h-8 text-red-700 font-semibold">
+                          -{formatCurrency(totalDebits)}
+                        </td>
                       </tr>
                     </tbody>
                   )}
@@ -271,14 +287,22 @@ export default function EStatementPage() {
                           const isDebit = txn.from_account === selectedAccount
                           return (
                             <tr key={txn.id}>
-                              <td className="h-10 pt-3">{formatDate(txn.created_at)}</td>
-                              <td className="h-10 pt-3">{txn.description || '—'}</td>
+                              <td className="h-10 pt-3">
+                                {formatDate(txn.created_at)}
+                              </td>
+                              <td className="h-10 pt-3">
+                                {txn.description || '—'}
+                              </td>
                               <td className="h-10 pt-3">TXN-{txn.id}</td>
                               <td className="h-10 pt-3 text-red-700">
-                                {isDebit ? `-${formatCurrency(parseFloat(txn.amount))}` : ''}
+                                {isDebit
+                                  ? `-${formatCurrency(parseFloat(txn.amount))}`
+                                  : ''}
                               </td>
                               <td className="h-10 pt-3 text-green-700">
-                                {!isDebit ? `+${formatCurrency(parseFloat(txn.amount))}` : ''}
+                                {!isDebit
+                                  ? `+${formatCurrency(parseFloat(txn.amount))}`
+                                  : ''}
                               </td>
                               <td className="h-10 pt-3">{txn.status}</td>
                             </tr>
