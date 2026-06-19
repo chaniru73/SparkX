@@ -11,10 +11,10 @@ export async function POST(request: Request) {
     const sql = `
       SELECT id, username, role, full_name, email
       FROM users
-      WHERE username = '${username}' AND password = '${password}'
+      WHERE username = $1 AND password = $2
       LIMIT 1
     `
-    const result = await runStatement(sql)
+    const result = await runStatement(sql, [username, password])
 
     if (!result.rows[0]) {
       return Response.json(

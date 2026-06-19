@@ -8,10 +8,10 @@ export async function GET(request: Request) {
     const sql = `
       SELECT *
       FROM transactions
-      WHERE from_account = '${account}' OR to_account = '${account}'
+      WHERE from_account = $1 OR to_account = $1
       ORDER BY created_at DESC
     `
-    const result = await runStatement(sql)
+    const result = await runStatement(sql, [account])
 
     return Response.json({
       ok: true,

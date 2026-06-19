@@ -11,21 +11,21 @@ export async function POST(request: Request) {
 
     await runStatement(`
       UPDATE accounts
-      SET balance = balance - ${amount}
-      WHERE account_number = '${fromAccount}'
-    `)
+      SET balance = balance - $1
+      WHERE account_number = $2
+    `, [amount, fromAccount])
 
     await runStatement(`
       UPDATE accounts
-      SET balance = balance + ${amount}
-      WHERE account_number = '${toAccount}'
-    `)
+      SET balance = balance + $1
+      WHERE account_number = $2
+    `, [amount, toAccount])
 
     const inserted = await runStatement(`
       INSERT INTO transactions (from_account, to_account, amount, description, created_by)
-      VALUES ('${fromAccount}', '${toAccount}', ${amount}, '${description}', ${userId})
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
-    `)
+    `, [fromAccount, toAccount, amount, description, userId])
 
     return Response.json({
       ok: true,

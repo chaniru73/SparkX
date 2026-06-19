@@ -7,16 +7,16 @@ export async function GET(request: Request) {
 
     const sql = `
       SELECT 'user' AS type, id::text, username AS label, email AS detail FROM users
-      WHERE username ILIKE '%${q}%' OR full_name ILIKE '%${q}%'
+      WHERE username ILIKE '%' || $1 || '%' OR full_name ILIKE '%' || $1 || '%'
       UNION ALL
       SELECT 'account' AS type, id::text, account_number AS label, account_name AS detail FROM accounts
-      WHERE account_number ILIKE '%${q}%' OR account_name ILIKE '%${q}%'
+      WHERE account_number ILIKE '%' || $1 || '%' OR account_name ILIKE '%' || $1 || '%'
       UNION ALL
       SELECT 'transaction' AS type, id::text, from_account || ' -> ' || to_account AS label, description AS detail FROM transactions
-      WHERE description ILIKE '%${q}%'
+      WHERE description ILIKE '%' || $1 || '%'
       LIMIT 25
     `
-    const result = await runStatement(sql)
+    const result = await runStatement(sql, [q])
 
     return Response.json({
       ok: true,
