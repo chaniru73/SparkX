@@ -1,4 +1,5 @@
 import { asText, runStatement, serviceFailure } from '@/lib/platform-db'
+import bcrypt from 'bcryptjs'
 
 // GET handler removed — it exposed all user credentials to unauthenticated callers.
 
@@ -8,15 +9,16 @@ export async function POST(request: Request) {
     const username = asText(body.username)
     const password = asText(body.password)
 
-    const sql = `
-      SELECT id, username, role, full_name, email
-      FROM users
-      WHERE username = $1 AND password = $2
-      LIMIT 1
-    `
-    const result = await runStatement(sql, [username, password])
+    const result = await runStatement(
+      `SELECT id, username, password, role, full_name, email
+       FROM users
+       WHERE username = $1
+       LIMIT 1`,
+      [username]
+    )
 
-    if (!result.rows[0]) {
+    const row = result.rows[0]
+    if (!row || !bcrypt.compareSync(password, row.password)) {
       return Response.json(
         {
           ok: false,
@@ -26,7 +28,9 @@ export async function POST(request: Request) {
       )
     }
 
-    const user = result.rows[0]
+    // Strip password hash before building response
+    const { password: _hash, ...user } = row
+
     const headers = new Headers()
     headers.append('set-cookie', `user_id=${user.id}; Path=/; SameSite=Lax`)
     headers.append('set-cookie', `role=${user.role}; Path=/; SameSite=Lax`)
