@@ -1,7 +1,44 @@
+'use client'
+
+import { useState, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import AuthButton from '@/components/authButton'
 
 export default function LoginPage() {
+  const router = useRouter()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError('')
+    setSubmitting(true)
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+
+      if (res.ok) {
+        router.replace('/dashboard')
+        return
+      }
+
+      // Generic error — never reveal which field was wrong
+      setError('Invalid username or password.')
+    } catch {
+      setError('Unable to reach the server. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <section className="mx-auto flex min-h-[480px] w-full max-w-[1060px] overflow-hidden rounded-[56px] bg-white shadow-[0_1px_3px_0_rgba(0,0,0,0.30),0_4px_8px_3px_rgba(0,0,0,0.15)] lg:min-h-[660px]">
       <aside
@@ -30,7 +67,7 @@ export default function LoginPage() {
             LOGIN
           </h1>
 
-          <div className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative">
               <label className="sr-only" htmlFor="login-account">
                 Account name
@@ -44,6 +81,10 @@ export default function LoginPage() {
               <input
                 id="login-account"
                 placeholder="Account name"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                autoComplete="username"
+                required
                 className="h-[64px] w-full rounded-[40px] border-0 bg-[#d9d9d9] px-8 pl-20 text-lg text-black shadow-[0_1px_3px_0_rgba(0,0,0,0.30),0_4px_8px_3px_rgba(0,0,0,0.15)] outline-none transition-shadow placeholder:text-black/45 focus:shadow-[0_4px_4px_0_rgba(0,0,0,0.30),0_8px_12px_6px_rgba(0,0,0,0.15)]"
               />
             </div>
@@ -62,21 +103,33 @@ export default function LoginPage() {
                 id="login-password"
                 type="password"
                 placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
                 className="h-[64px] w-full rounded-[40px] border-0 bg-[#d9d9d9] px-8 pl-20 text-lg text-black shadow-[0_1px_3px_0_rgba(0,0,0,0.30),0_4px_8px_3px_rgba(0,0,0,0.15)] outline-none transition-shadow placeholder:text-black/45 focus:shadow-[0_4px_4px_0_rgba(0,0,0,0.30),0_8px_12px_6px_rgba(0,0,0,0.15)]"
               />
             </div>
-          </div>
 
-          <div className="mt-3 text-right">
-            <Link
-              href="/reset-password"
-              className="text-sm font-bold text-black"
-            >
-              Forgot password?
-            </Link>
-          </div>
+            <div className="mt-3 text-right">
+              <Link
+                href="/reset-password"
+                className="text-sm font-bold text-black"
+              >
+                Forgot password?
+              </Link>
+            </div>
 
-          <AuthButton className="mt-8">SIGN IN</AuthButton>
+            {error && (
+              <p className="text-sm font-semibold text-red-600" role="alert">
+                {error}
+              </p>
+            )}
+
+            <AuthButton className="mt-8" type="submit" disabled={submitting}>
+              {submitting ? 'SIGNING IN…' : 'SIGN IN'}
+            </AuthButton>
+          </form>
 
           <p className="mt-6 text-sm font-bold text-black">
             Don`t have an account?

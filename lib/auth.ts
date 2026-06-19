@@ -1,7 +1,15 @@
 import { createHmac } from 'crypto'
 
-const SESSION_SECRET =
-  process.env.SESSION_SECRET || '__dev-only-fallback-secret__'
+const _rawSecret = process.env.SESSION_SECRET
+
+if (!_rawSecret || _rawSecret.length < 32) {
+  throw new Error(
+    '[auth] SESSION_SECRET must be set as an environment variable and be at least 32 characters long. ' +
+    'Generate one with: openssl rand -base64 48'
+  )
+}
+
+const SESSION_SECRET: string = _rawSecret
 
 interface SessionPayload {
   userId: number
