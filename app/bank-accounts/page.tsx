@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Sidebar from '@/components/sidebar'
@@ -9,12 +9,26 @@ import styles from './accounts.module.css'
 
 type Screen = 'list' | 'add' | 'edit'
 
+interface Account {
+  id: number
+  user_id: number
+  account_number: string
+  account_name: string
+  balance: string
+  username: string
+  full_name: string
+}
+
 export default function AccountsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
   // Screen state
   const [screen, setScreen] = useState<Screen>('list')
+
+  // Accounts fetched from API
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [loading, setLoading] = useState(true)
 
   // Check if we're in edit mode from URL
   const isEditMode = searchParams.get('mode') === 'edit'
@@ -41,6 +55,32 @@ export default function AccountsPage() {
     email: '',
     nickname: ''
   })
+
+  // Fetch accounts from API
+  const fetchAccounts = useCallback(async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/accounts', { credentials: 'include' })
+      if (res.status === 401) {
+        router.replace('/login')
+        return
+      }
+      if (!res.ok) {
+        setAccounts([])
+        return
+      }
+      const data = await res.json()
+      setAccounts(data.accounts ?? [])
+    } catch {
+      setAccounts([])
+    } finally {
+      setLoading(false)
+    }
+  }, [router])
+
+  useEffect(() => {
+    fetchAccounts()
+  }, [fetchAccounts])
 
   // Load data if in edit mode
   useEffect(() => {
@@ -197,8 +237,8 @@ export default function AccountsPage() {
       return
     }
 
-    console.log('Adding new account:', formData)
-    alert('Account added successfully!')
+    // Demo only — no backend endpoint for adding accounts
+    alert('Demo only: Account add is not connected to a backend endpoint.')
     resetForm()
     goToList()
   }
@@ -231,8 +271,8 @@ export default function AccountsPage() {
       return
     }
 
-    console.log('Updating nickname to:', nickname)
-    alert(`Nickname updated to: ${nickname}`)
+    // Demo only — no backend endpoint for editing nicknames
+    alert(`Demo only: Nickname update is not connected to a backend endpoint.`)
     resetForm()
     goToList()
   }
@@ -240,6 +280,12 @@ export default function AccountsPage() {
   const handleCancel = () => {
     resetForm()
     goToList()
+  }
+
+  // Format balance for display
+  const formatBalance = (balance: string) => {
+    const num = parseFloat(balance || '0')
+    return `Rs. ${num.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   return (
@@ -267,28 +313,36 @@ export default function AccountsPage() {
             </header>
 
             <div className={styles.cardsContainer}>
-              <div className={styles.accountCard}>
-                <div className={styles.iconEdit} onClick={goToEdit}>
-                  ✏️
-                </div>
-                <div className={styles.iconDelete}>🗑️</div>
-                <div className={styles.accountCardContent}>
-                  <h2 className={styles.accountName}>Anura</h2>
-                  <div className={styles.accountAvatar}>
-                    <Image
-                      src="/account-logo.png"
-                      alt="profile"
-                      width={100}
-                      height={100}
-                      style={{ objectFit: 'cover', borderRadius: '50%' }}
-                    />
+              {loading ? (
+                <p style={{ color: '#888', padding: '2rem' }}>Loading accounts…</p>
+              ) : accounts.length === 0 ? (
+                <p style={{ color: '#888', padding: '2rem' }}>No accounts found.</p>
+              ) : (
+                accounts.map((account) => (
+                  <div key={account.id} className={styles.accountCard}>
+                    <div className={styles.iconEdit} onClick={goToEdit}>
+                      ✏️
+                    </div>
+                    <div className={styles.iconDelete} title="Demo only — no backend endpoint">🗑️</div>
+                    <div className={styles.accountCardContent}>
+                      <h2 className={styles.accountName}>{account.account_name}</h2>
+                      <div className={styles.accountAvatar}>
+                        <Image
+                          src="/account-logo.png"
+                          alt="profile"
+                          width={100}
+                          height={100}
+                          style={{ objectFit: 'cover', borderRadius: '50%' }}
+                        />
+                      </div>
+                      <p className={styles.accountDetails}>
+                        {account.account_number} <br />
+                        {formatBalance(account.balance)}
+                      </p>
+                    </div>
                   </div>
-                  <p className={styles.accountDetails}>
-                    Nova Bank <br />
-                    Colombo 05
-                  </p>
-                </div>
-              </div>
+                ))
+              )}
 
               <button className={styles.addAccountCard} onClick={goToAdd}>
                 <h2 className={styles.addAccountTitle}>Add a Bank Account</h2>
@@ -322,6 +376,9 @@ export default function AccountsPage() {
               <div className={styles.formCard}>
                 <div className={styles.formHeader}>
                   <h2 className={styles.formTitle}>Add Another Bank Account</h2>
+                  <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                    Demo only — not connected to backend
+                  </p>
                 </div>
 
                 <form className={styles.formFields}>
@@ -456,6 +513,9 @@ export default function AccountsPage() {
               <div className={styles.formCard}>
                 <div className={styles.formHeader}>
                   <h2 className={styles.formTitle}>Edit the nickname</h2>
+                  <p style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                    Demo only — not connected to backend
+                  </p>
                 </div>
 
                 <form

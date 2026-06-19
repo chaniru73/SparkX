@@ -1,41 +1,75 @@
 'use client'
 
-import { useState } from 'react'
-import Image from 'next/image'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Sidebar from '@/components/sidebar'
+
+interface Account {
+  id: number
+  account_number: string
+  account_name: string
+  balance: string
+}
 
 type Errors = Partial<{
   amount: string
-  accountNumber: string
-  accountName: string
-  bank: string
+  fromAccount: string
+  toAccount: string
 }>
 
+type Step = 'form' | 'confirm' | 'success' | 'failure'
+
 export default function Home() {
+  const router = useRouter()
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [fromAccount, setFromAccount] = useState('')
   const [amount, setAmount] = useState('')
-  const [accountNumber, setAccountNumber] = useState('')
-  const [accountName, setAccountName] = useState('')
-  const [bank, setBank] = useState('')
+  const [toAccount, setToAccount] = useState('')
   const [description, setDescription] = useState('')
   const [errors, setErrors] = useState<Errors>({})
-  const [step, setStep] = useState<'form' | 'confirm' | 'success' | 'failure'>(
-    'form'
-  )
+  const [step, setStep] = useState<Step>('form')
   const [confirmation, setConfirmation] = useState<string | null>(null)
+  const [failureMsg, setFailureMsg] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  // Fetch source accounts on mount
+  const fetchAccounts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/accounts', { credentials: 'include' })
+      if (res.status === 401) {
+        router.replace('/login')
+        return
+      }
+      if (!res.ok) return
+      const data = await res.json()
+      const accs: Account[] = data.accounts ?? []
+      setAccounts(accs)
+      if (accs.length > 0) {
+        setFromAccount(accs[0].account_number)
+      }
+    } catch {
+      // fail silently on network error
+    }
+  }, [router])
+
+  useEffect(() => {
+    fetchAccounts()
+  }, [fetchAccounts])
 
   function validate() {
     const e: Errors = {}
+    if (!fromAccount) e.fromAccount = 'Select a source account'
+
     if (!amount) e.amount = 'Amount is required'
     else if (Number(amount) <= 0 || isNaN(Number(amount)))
       e.amount = 'Enter a valid positive amount'
 
-    if (!accountNumber) e.accountNumber = 'Account number is required'
-    else if (!/^\d{6,}$/.test(accountNumber))
-      e.accountNumber = 'Enter a valid account number'
+    if (!toAccount) e.toAccount = 'Destination account number is required'
+    else if (!/^\d{6,}$/.test(toAccount))
+      e.toAccount = 'Enter a valid account number'
 
-    if (!accountName) e.accountName = 'Account name is required'
-
-    if (!bank) e.bank = 'Select a bank'
+    if (fromAccount && toAccount && fromAccount === toAccount)
+      e.toAccount = 'Source and destination must differ'
 
     setErrors(e)
     return Object.keys(e).length === 0
@@ -44,17 +78,68 @@ export default function Home() {
   function handleNext(e: React.FormEvent) {
     e.preventDefault()
     if (validate()) {
-      // show confirmation step first
       setStep('confirm')
     }
   }
 
-  function handleTransfer(e: React.FormEvent) {
+  async function handleTransfer(e: React.FormEvent) {
     e.preventDefault()
-    // simulate transfer completion and show success page
-    const conf = String(Math.floor(10000000 + Math.random() * 89999999))
-    setConfirmation(conf)
-    setStep('success' as any)
+    setSubmitting(true)
+    setFailureMsg('')
+
+    try {
+      const res = await fetch('/api/transfer', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fromAccount,
+          toAccount,
+          amount: Number(amount),
+          description
+        })
+      })
+
+      if (res.status === 401) {
+        router.replace('/login')
+        return
+      }
+
+      const data = await res.json()
+
+      if (res.ok && data.ok) {
+        setConfirmation(data.transaction?.id?.toString() || 'OK')
+        setStep('success')
+      } else {
+        // Show the backend error message
+        setFailureMsg(data.message || 'Transfer failed.')
+        setStep('failure')
+      }
+    } catch {
+      setFailureMsg('Unable to reach the server. Please try again.')
+      setStep('failure')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function resetForm() {
+    setAmount('')
+    setToAccount('')
+    setDescription('')
+    setErrors({})
+    setConfirmation(null)
+    setFailureMsg('')
+    setStep('form')
+    // Re-fetch accounts to get updated balances
+    fetchAccounts()
+  }
+
+  // Get the selected source account details
+  const selectedAccount = accounts.find((a) => a.account_number === fromAccount)
+  const formatBalance = (b: string) => {
+    const num = parseFloat(b || '0')
+    return `Rs. ${num.toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   return (
@@ -84,14 +169,40 @@ export default function Home() {
           {step === 'form' ? (
             <form onSubmit={handleNext} className="transfer-card p-8">
               <div className="grid grid-cols-12 gap-y-6 gap-x-8 items-center">
+                <label className="col-span-3 text-gray-700">From Account :</label>
+                <div className="col-span-9">
+                  <select
+                    value={fromAccount}
+                    onChange={(e) => setFromAccount(e.target.value)}
+                    className="underline-input bg-transparent"
+                  >
+                    {accounts.length === 0 && (
+                      <option value="">Loading accounts…</option>
+                    )}
+                    {accounts.map((acc) => (
+                      <option key={acc.id} value={acc.account_number}>
+                        {acc.account_name} — {acc.account_number} ({formatBalance(acc.balance)})
+                      </option>
+                    ))}
+                  </select>
+                  {errors.fromAccount && (
+                    <div className="text-sm text-red-600 mt-1">
+                      {errors.fromAccount}
+                    </div>
+                  )}
+                </div>
+
                 <label className="col-span-3 text-gray-700">Amount :</label>
                 <div className="col-span-9">
                   <input
                     aria-label="amount"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     className="underline-input"
-                    placeholder=""
+                    placeholder="Enter amount"
                   />
                   {errors.amount && (
                     <div className="text-sm text-red-600 mt-1">
@@ -101,54 +212,18 @@ export default function Home() {
                 </div>
 
                 <label className="col-span-3 text-gray-700">
-                  Account Number :
+                  To Account Number :
                 </label>
                 <div className="col-span-9">
                   <input
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
+                    value={toAccount}
+                    onChange={(e) => setToAccount(e.target.value)}
                     className="underline-input"
+                    placeholder="Enter destination account number"
                   />
-                  {errors.accountNumber && (
+                  {errors.toAccount && (
                     <div className="text-sm text-red-600 mt-1">
-                      {errors.accountNumber}
-                    </div>
-                  )}
-                </div>
-
-                <label className="col-span-3 text-gray-700">
-                  Account Name :
-                </label>
-                <div className="col-span-9">
-                  <input
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    className="underline-input"
-                  />
-                  {errors.accountName && (
-                    <div className="text-sm text-red-600 mt-1">
-                      {errors.accountName}
-                    </div>
-                  )}
-                </div>
-
-                <label className="col-span-3 text-gray-700">
-                  Select Bank :
-                </label>
-                <div className="col-span-9">
-                  <select
-                    value={bank}
-                    onChange={(e) => setBank(e.target.value)}
-                    className="underline-input bg-transparent"
-                  >
-                    <option value="">Choose bank</option>
-                    <option>First National</option>
-                    <option>Global Trust</option>
-                    <option>Union Bank</option>
-                  </select>
-                  {errors.bank && (
-                    <div className="text-sm text-red-600 mt-1">
-                      {errors.bank}
+                      {errors.toAccount}
                     </div>
                   )}
                 </div>
@@ -162,6 +237,7 @@ export default function Home() {
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
                     className="description-box"
+                    placeholder="Optional"
                   />
                 </div>
               </div>
@@ -178,13 +254,18 @@ export default function Home() {
                 Confirm Transfer
               </h3>
               <div className="bg-white rounded-lg p-6 shadow-lg max-w-xl mx-auto text-center">
+                <p className="mb-2">
+                  From: <strong>{selectedAccount?.account_name ?? fromAccount}</strong>
+                </p>
                 <p className="mb-4">
-                  Confirm your transfer of <strong>Rs. {amount || '0'}</strong>{' '}
-                  to <strong>{accountName || 'recipient'}</strong>
+                  Transfer <strong>Rs. {Number(amount).toLocaleString('en-LK', { minimumFractionDigits: 2 })}</strong>{' '}
+                  to account <strong>{toAccount}</strong>
                 </p>
-                <p className="text-sm text-gray-600 mb-6">
-                  Additional fee of Rs.50 will be charged.
-                </p>
+                {description && (
+                  <p className="text-sm text-gray-500 mb-4">
+                    Description: {description}
+                  </p>
+                )}
                 <div className="mb-6">
                   <img
                     src="/transfer-illustration.png"
@@ -194,7 +275,7 @@ export default function Home() {
                 </div>
                 <div className="flex justify-center gap-4">
                   <button
-                    onClick={() => setStep('failure')}
+                    onClick={() => setStep('form')}
                     className="next-btn"
                     aria-label="back"
                   >
@@ -203,8 +284,9 @@ export default function Home() {
                   <button
                     onClick={handleTransfer}
                     className="next-btn transfer-btn"
+                    disabled={submitting}
                   >
-                    TRANSFER
+                    {submitting ? 'TRANSFERRING…' : 'TRANSFER'}
                   </button>
                 </div>
               </div>
@@ -243,22 +325,12 @@ export default function Home() {
                   Transfer Successful!
                 </h3>
                 <p className="text-center text-sm text-gray-500 mb-10">
-                  Confirmation number : {confirmation}
+                  Transaction ID : {confirmation}
                 </p>
 
                 <div className="flex justify-center">
                   <button
-                    onClick={() => {
-                      // go back to home (reset form)
-                      setAmount('')
-                      setAccountNumber('')
-                      setAccountName('')
-                      setBank('')
-                      setDescription('')
-                      setErrors({})
-                      setConfirmation(null)
-                      setStep('form')
-                    }}
+                    onClick={resetForm}
                     className="transfer-btn success-btn"
                   >
                     <span className="mr-3">‹</span> BACK TO HOME
@@ -303,23 +375,12 @@ export default function Home() {
                   Transaction Failed!
                 </h3>
                 <p className="text-center text-sm text-gray-500 mb-6">
-                  Insufficient Balance
-                  <br />
-                  Current Balance is: Rs.500
+                  {failureMsg || 'An unexpected error occurred.'}
                 </p>
 
                 <div className="flex justify-center">
                   <button
-                    onClick={() => {
-                      setAmount('')
-                      setAccountNumber('')
-                      setAccountName('')
-                      setBank('')
-                      setDescription('')
-                      setErrors({})
-                      setConfirmation(null)
-                      setStep('form')
-                    }}
+                    onClick={resetForm}
                     className="transfer-btn success-btn"
                   >
                     <span className="mr-3">‹</span> BACK TO HOME
