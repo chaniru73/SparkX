@@ -1,5 +1,5 @@
 /* ===== ROOT VARIABLES ===== */
-:root {
+.accountsPage {
   /* Colors */
   --color-primary: #450043;
   --color-primary-hover: #5a0058;
@@ -440,7 +440,7 @@
 
 /* Tablet */
 @media (max-width: 768px) {
-  :root {
+  .accountsPage {
     --card-width: 100%;
     --card-height: 160px;
     --form-width: 100%;
@@ -477,7 +477,7 @@
 
 /* Mobile */
 @media (max-width: 480px) {
-  :root {
+  .accountsPage {
     --card-height: 150px;
     --avatar-size: 35px;
     --font-4xl: 20px;
@@ -532,7 +532,7 @@
 
 /* Small Mobile */
 @media (max-width: 360px) {
-  :root {
+  .accountsPage {
     --card-height: 130px;
     --font-xl: 14px;
     --font-md: 12px;
@@ -565,7 +565,7 @@
 
 /* Large Screens */
 @media (min-width: 1200px) {
-  :root {
+  .accountsPage {
     --card-width: 580px;
     --card-height: 200px;
     --form-width: 700px;
