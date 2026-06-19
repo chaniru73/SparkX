@@ -14,10 +14,10 @@ export async function GET(request: Request) {
       SELECT ${columns}
       FROM accounts a
       JOIN users u ON u.id = a.user_id
-      WHERE a.user_id = ${userId}
+      WHERE a.user_id = $1
       ORDER BY a.id
     `
-    const result = await runStatement(sql)
+    const result = await runStatement(sql, [userId])
 
     return Response.json({
       ok: true,
