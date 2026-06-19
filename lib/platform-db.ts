@@ -91,21 +91,13 @@ export function asText(value: unknown) {
 }
 
 export function serviceFailure(reason: unknown) {
-  const issue = reason as {
-    message?: string
-    code?: string
-    detail?: string
-    stack?: string
-  }
+  // Log full error details server-side only
+  console.error('[bank-error]', reason)
 
   return Response.json(
     {
       ok: false,
-      message: issue.message,
-      code: issue.code,
-      detail: issue.detail,
-      trace: issue.stack,
-      databaseUrl: connectionString
+      message: 'An internal error occurred. Please try again later.'
     },
     { status: 500 }
   )
