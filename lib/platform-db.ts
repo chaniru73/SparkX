@@ -103,6 +103,28 @@ export function asText(value: unknown) {
   return String(value)
 }
 
+/**
+ * Run a callback inside a PostgreSQL transaction (BEGIN / COMMIT / ROLLBACK).
+ * The callback receives a PoolClient for issuing queries with row-level locks.
+ */
+export async function withTransaction<T>(
+  fn: (client: import('pg').PoolClient) => Promise<T>
+): Promise<T> {
+  await ensureDatabase()
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const result = await fn(client)
+    await client.query('COMMIT')
+    return result
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
+  }
+}
+
 export function serviceFailure(reason: unknown) {
   // Log full error details server-side only
   console.error('[bank-error]', reason)
