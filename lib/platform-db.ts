@@ -1,9 +1,12 @@
 import { Pool } from 'pg'
 import bcrypt from 'bcryptjs'
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  'postgresql://postgres:supersecurepassword@localhost:5432/htn26db'
+const connectionString = process.env.DATABASE_URL
+if (!connectionString) {
+  throw new Error(
+    '[bank-db] DATABASE_URL is not set. Cannot start without a database connection.'
+  )
+}
 
 export const pool = new Pool({
   connectionString,
@@ -75,7 +78,6 @@ ON CONFLICT DO NOTHING;
 
 export async function runStatement(sql: string, params?: unknown[]) {
   await ensureDatabase()
-  console.log('[bank-sql]', sql)
   return pool.query(sql, params)
 }
 
